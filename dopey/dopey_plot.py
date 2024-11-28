@@ -86,6 +86,9 @@ def plot(D = {}, ax = None, shup = False, **kwargs):
     elif Typ == "result" and Knd == "spin_edc_polarization":
         return _plotResultsSpinEDCpolarization(D = D, ax = ax, shup = shup, **kwargs)
     #
+    elif Typ == "result" and Knd == "spin_mdc_polarization":
+        return _plotResultsSpinMDCpolarization(D = D, ax = ax, shup = shup, **kwargs)
+    #
     elif Typ == "dichroism":
         return _plotDichroism(D = D, ax = ax, shup = shup, **kwargs)
     #
@@ -832,7 +835,7 @@ def _plotResultsSpinEDC(D = {}, ax = None, shup = False, **kwargs):
         if legend: aX.legend(fontsize = fontsize -2)
         return aX
     #
-    what_to_plot = kwargs.get("intensity", intkwargs[0])
+    what_to_plot = kwargs.get("intensity", intkwargs[2])
     fig = None
     if not type(what_to_plot) is str: what_to_plot = intkwargs[0]
     what_to_plot = what_to_plot.lower()
@@ -907,8 +910,8 @@ def _plotResultsSpinMDC_FE(D = {}, ax = None, shup = False, **kwargs):
     if not type(what_to_plot) is str: what_to_plot = ""
     what_to_plot = what_to_plot.lower()
     if not what_to_plot in intkwargs:
-        what_to_plot = intkwargs[0]
-        print(Fore.MAGENTA + f"plot(): Valid values for the keyword argument intensity are: {intkwargs}. Setting default intensity = {intkwargs[0]}." + Fore.RESET)
+        what_to_plot = intkwargs[2]
+        print(Fore.MAGENTA + f"plot(): Valid values for the keyword argument intensity are: {intkwargs}. Setting default intensity = {intkwargs[2]}." + Fore.RESET)
     if not type(ax) is mpl.axes._axes.Axes:
         fig, ax = plt.subplots(figsize = kwargs.get("figsize", (5, 3)))
     if what_to_plot in "intensity": ax = plot1(ax)
@@ -1064,6 +1067,87 @@ def _plotResultsSpinEDCpolarization(D = {}, ax = None, shup = False, **kwargs):
 
 
 
+def _plotResultsSpinMDCpolarization(D = {}, ax = None, shup = False, **kwargs):
+    """
+    """
+    accepted_kwargs = ["intensity", "figsize", "xlim", "pylim", "cylim", "fontsize", "legend", "linewidth", "fontsize"]
+    intkwargs = ["polarization", "components"]
+    if not shup:
+        print(Fore.BLUE + f"plot(): Valid keyword arguments {accepted_kwargs}" + Fore.RESET)
+        print(Fore.BLUE + f"        Pass keyword intensity to return a pyplot axis. Valid values: {intkwargs}" + Fore.RESET)
+    #
+    linewidth = kwargs.get("linewidth", 0.75)
+    legend = kwargs.get("legend", True)
+    fontsize = kwargs.get("fontsize", 10)
+    xlim = kwargs.get("xlim", (None, None)) 
+    pylim = kwargs.get("pylim", (None, None))
+    cylim = kwargs.get("cylim", (None, None))
+
+    def plot1(aX):
+        try: aX.plot(D["x"], D["px"], color = "blue", linewidth = linewidth, label = "$P_x$")
+        except: pass
+        try: aX.plot(D["x"], D["py"], color = "green", linewidth = linewidth, label = "$P_y$")
+        except: pass
+        try: aX.plot(D["x"], D["pz"], color = "red", linewidth = linewidth, label = "$P_z$")
+        except: pass
+        aX.set_title("Polarization", fontsize = fontsize)
+        aX.set_xlabel(D.get("labels", {}).get("x", "?"), fontsize = fontsize - 1)
+        try: aX.set_ylabel(D.get("labels", {})["px"], fontsize = fontsize - 1)
+        except:
+            try: aX.set_ylabel(D.get("labels", {})["py"], fontsize = fontsize - 1)
+            except:
+                try: aX.set_ylabel(D.get("labels", {})["py"], fontsize = fontsize - 1)
+                except: pass
+        aX.set_xlim(xlim)
+        aX.set_ylim(pylim)
+        if legend: aX.legend(fontsize = fontsize -2)
+        return aX
+    
+    def plot2(aX):
+        try: 
+            aX.plot(D["x"], D["component_intensity_px"][1], color = "blue", linewidth = linewidth, label = "$x+$")
+            aX.plot(D["x"], D["component_intensity_px"][0], color = "blue", linewidth = linewidth, label = "$x-$", linestyle = "--")
+        except: pass
+        try: 
+            aX.plot(D["x"], D["component_intensity_py"][1], color = "green", linewidth = linewidth, label = "$y+$")
+            aX.plot(D["x"], D["component_intensity_py"][0], color = "green", linewidth = linewidth, label = "$y-$", linestyle = "--")
+        except: pass
+        try: 
+            aX.plot(D["x"], D["component_intensity_pz"][1], color = "red", linewidth = linewidth, label = "$z+$")
+            aX.plot(D["x"], D["component_intensity_pz"][0], color = "red", linewidth = linewidth, label = "$z-$", linestyle = "--")
+        except: pass
+        aX.set_title("Component intensity", fontsize = fontsize)
+        aX.set_xlabel(D.get("labels", {}).get("x", "?"), fontsize = fontsize - 1)
+        try: aX.set_ylabel(D.get("labels", {})["component_intensity_px"], fontsize = fontsize - 1)
+        except:
+            try: aX.set_ylabel(D.get("labels", {})["component_intensity_py"], fontsize = fontsize - 1)
+            except:
+                try: aX.set_ylabel(D.get("labels", {})["component_intensity_pz"], fontsize = fontsize - 1)
+                except: pass
+        aX.set_xlim(xlim)
+        aX.set_ylim(cylim)
+        if legend: aX.legend(fontsize = fontsize -2)
+        return aX
+    
+    what_to_plot = kwargs.get("intensity", "")
+    fig = None
+    if not type(what_to_plot) is str: what_to_plot = ""
+    what_to_plot = what_to_plot.lower()
+    if not what_to_plot in intkwargs: what_to_plot = ""
+    if what_to_plot == "":
+        if str(type(ax)) == _axtype:
+            print(Fore.MAGENTA + "plot(): A pyplot ax will not be returned unless you pass a valid value for keywork argument intensity." + Fore.RESET)
+        fig, ax = plt.subplots(ncols = 2, figsize = kwargs.get("figsize", (6, 2.5)))
+        ax[0] = plot1(ax[0])
+        ax[1] = plot2(ax[1])
+        fig.tight_layout()
+    else:
+        if not str(type(ax)) == _axtype:
+            fig, ax = plt.subplots(figsize = kwargs.get("figsize", (5, 3)))
+        if what_to_plot in "polarization": ax = plot1(ax)
+        elif what_to_plot == "components": ax = plot2(ax)
+        fig.tight_layout()
+    return ax
 
 
 

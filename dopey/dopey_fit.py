@@ -1,9 +1,10 @@
-__version__ = "24.10.10"
+__version__ = "24.11.28"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
 
 """
+UNDER CONSTRUCTION. NOT READY. DO NOT USE.
 """
 
 

@@ -111,7 +111,7 @@ dopey_export2txt.py
             Ready: arpes, spin_edc, and spin_mdc (for FE).
 
 ============================================
-dopey_spin.py
+dopey_fit.py
 ============================================
 
 2024.10.07  Kind of finished fermiFit(). Returns a dict. Have to update dopey_plot.plot().
@@ -144,7 +144,3 @@ dopey_help.txt
 ============================================
 Known or suspected bugs, and stuff to do:
 ============================================
-
-    2024.08.30  refs        all files?          many methods            Remove references to DEFLECTORX and DEFLECTORY, 
-                                                                        and use DEFLECTOR_X and DEFLECTOR_Y instead.
-    2024.05.26  bug?        dopery_spin.py      normalizeSpin()         Seems like it does not work for mdc.

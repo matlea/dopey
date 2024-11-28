@@ -342,7 +342,7 @@ def normalizeSpin(D = {}, shup = False, **kwargs):
     
     #
     elif D.get("type", "") == "spin_mdc": # and D.get("experiment", {}).get("Scan_Mode", "") == "FixedAnalyzerTransmission":
-        print(Fore.LIGHTBLACK_EX + "normalizeSpin(): Not sure this method works for spin_mdc FAT. There seems to be a bug." + Fore.RESET)
+        print(Fore.LIGHTBLACK_EX + "normalizeSpin(): Not sure this method works for spin_mdc. There seems to be a bug. Working on it." + Fore.RESET)
         accepted_kwargs = ["p", "nump"]
         if not shup:
             print(Fore.BLUE + f"normalizeSpin(): Accepted keyword arguments are: {accepted_kwargs}" + Fore.RESET)
@@ -353,7 +353,7 @@ def normalizeSpin(D = {}, shup = False, **kwargs):
         if nump < 1: nump = 1
         if p + nump > len(D["x"]) + 1 : nump = len(D["x"]) + 1 - p
         #
-        # individulal edc's
+        # individulal curves
         INTENSITY = np.zeros(np.shape(D["intensity"]))
         INTENSITY_AVG = np.zeros(np.shape(D["intensity_mean"]))
         for i, defl in enumerate(D["y"]): 

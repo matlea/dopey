@@ -1,0 +1,32 @@
+dopey quick help (2024.11.27)
+
+load(filename)                Loads data and metadata from xy files. Intentifies the data type based
+                              on the metadata and sorts it accordingly. Resturns a dict.
+dataInfo(dict)                Prints the main info about the content of a dict from (e.g.) load().
+dictContents(dict)            As dataInfo() but more detailed.
+
+plot(dict)                    Plots dict data.
+fermiMapInteractive(dict)     Interactive plot of a fermi map. Is normally called by plot() unless
+                              told otherwise.
+
+quickSpin(dict)               Quick analysis of loaded spin data.
+despikeSpin(dict)             Remove spikes in the data.
+insertSpinData(dict1, dict2)  Merge two spin edc measurements (if the axes are the same.)
+deleteSpinEDCCurve(dict)      Delete one curve from a spin edc measurement.
+getSpinEDCfromMDC(dict)       Extract one EDC from a MDC.
+normalizeSpin(dict)           Normalize spin data to the background.
+polarization(dicts)           Calculate Px,Py,Pz from a list of dicts from quickSpin().
+rotatePolarization(dict)      Correct non-normal emission data.
+
+subArray(dict)                Returns a subsection of a data set.
+compact(dict)                 Reduce the data dimensionality.
+
+shiftAxis(dict)               Shift axis x, y, or z in a data dict.
+
+align()                       Interactive method that takes a fermi map as input.
+
+dichroism()                   Use with arpes or Fermi map data.
+plotDichroism()               Use with arpes or Fermi map data.
+
+etc., etc., etc.
+

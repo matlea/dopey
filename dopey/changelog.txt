@@ -1,0 +1,150 @@
+The 2nd version of dopey with a new loader and small modifications of
+the methods. Started 2024.05.14.
+
+Last update: 2024.11.27
+
+============================================
+dopey_loader.py
+============================================
+
+2024.08.30  Added spin arpes as a loadable data type.
+            Importing DEFLECTOR_X and DEFLECTOR_Y from dopey_constants.py.
+            Make sure to, with time, remove references to DEFLECTORX and DEFLECTORY.
+2024.06.08  Minor change to dataInfo().
+2024.05.29b The folder was renamed to dopey so I had to update the import from dopey_constants.py.
+2024.05.29  load() now runs dataInfo() at the end, unless shup == True.
+2024.05.27b Bugfix: getting the correct y-label for arpes and xps.
+            Bugfix: fixing saved y and z axes for spin map.
+            Added method dataInfo() with alias info() to show (indentified) info of a dict.
+2024.05.27  Bugfix: had forgotten to add 'labels' to the dict when loading fermi maps.
+2024.05.17  Renamed dict tag measurement_type to type.
+2024.05.16  The loader is now ready for arpes, xps, spind edc, spin mcp, spin map, and target scattering.
+            If not recognized the loaded semi-sorted data is kept under the key raw_data.
+            Copied dictContents() as-as is from the previous dopey_loader.py.
+2024.05.14  Started.
+
+============================================
+dopey_plot.py
+============================================
+
+2024.11.22  Added waterfallPlot().
+2024.11.21  Added type 'dicroism' for plotting.
+2024.10.05  Disabled type-checking in .plot() since I got it wrong. Return to this later.
+2024.10.04  Bugfixes in _plotResultsSpinEDC() and a few other _plotResults...
+2024.10.02  Bug in plot() that prevented ax from be passed. Fixed.
+2024.08.30b Added a print out for valid arguments for plot().
+2024.08.30  Added spin_arpes to the plottable data types. It is the same as for normal arpes.
+2024.06.08  Removed a debug print in _plotARPES().
+2024.05.29b The folder was renamed to dopey so I had to update the import from dopey_methods.py.
+2024.05.29  Fixed bugs in compact() in dopey_methods.py that prevented _plotFermiMapCut() to work propperly
+            and updated it accordingly.
+2024.05.27  fermiMapInteractive() works, except for the intensity slider. The cut = True does not work yet.
+2024.05.26  _plotResultsSpinMDC_FAT() is ready. This method is also used for result spin_map data.
+            _plotResultsSpinEDCpolarization() is ready.
+2024.05.24  _plotSpinMDC() is ready.
+            _plotResultsSpinEDC() and _plotResultsSpinMDC_FE() is ready.
+2024.05.17  Updated references to the dict tag measurement_type to reference to its new name (type).
+            Copied and modified _plot1d(), _plot2d(), _plotTarget(), and _plotSpinMap() from dopey_viewer.py.
+            Still need to do some work on fermi maps.
+2024.05.16	Started to migrate and modify the methods in the previous dopey_viewer.py. Starting with plot().
+            Now works for xps, arpes, and spin_mdc.
+
+============================================
+dopey_methods.py
+============================================
+
+2024.10.30  Bug in align() that swapped the x and y axes. Fixed.
+2024.10.29  Added align(). Can be improved.
+2024.10.25  Bugfix. 
+2024.09.18  Added shiftAxis().
+2024.05.29b The folder was renamed to dopey so I had to update the import from dopey_constants.py.
+            Starting to add methods for fitting Fermi levels: fermi() ok, still working on fermiFit()...
+2024.05.29  Fixed bugs in compact() (again chaged keys Type to type).
+2024.05.28b Added gaussianSmooth(). Works for arrays or dopey dicts (not result dicts, tho).
+2024.05.28  Starting to add some fitting methods.
+            methods gaussian() and gaussian2() are returning gaussian curves (1 and 2 peaks).
+            method fitGaussian() and fitGaussian2() are fitting functions.
+            Neither takes dopey dicts but actual arrays.
+2024.05.26  Bugfix in compact() (key Type supposed to be type).
+2024.05.17  Modifying methods from the original dopey_methods.py. So far: subArray(), compact(), secondDerivative(),
+            and gaussianSmooth(). That was all the methods I had created so far, so done!
+
+============================================
+dopey_constants.py
+============================================
+
+2024.09.18  Added DATA_AXES and DATA_INTENSITIES (containing [x,y,z] and [intensity, intensity_mean]).
+2024.08.30  Added DEFLECTOR_X, DEFLECTOR_Y = DEFLECTORS[0], DEFLECTORS[1].
+            Make sure to, with time, remove the use of DEFLECTORX and DEFLECTORY in the modules,
+2024.05.16  CCD_ANALYZERS = ["PhoibosCCD", "AnalyzerCCD"], SPIN_ANALYZERS = ["PhoibosSpin"], SHERMAN = 0.29,
+            and DEFLECTORS = ['ShiftX [a.u.]', 'ShiftY [a.u.]']
+
+============================================
+dopey_spin.py
+============================================
+
+2024.11.27  All mergeSpin...() methods are now called insertSpin...(). Works for EDC, MDC, and map (insertSpinEDC(), insertSpinMDC(), and insertSpinMap()). Common method insertSpinMap().
+2024.11.02  Bugfig in mergeSpinMDC().
+2024.11.01b Renamed mergeSpinEDC() and mergeSpinMDC() to insertSpinEDC() and insertSpinMDC().
+2024.11.01  added mergeSpinMDC() and also mergeSpinData() that uses either mergeSpinMDC() or mergeSpinEDC().
+            Finished updateSpinMDC(). Added updateSpinData() that calls either updateSpinEDC() or updateSpinMDC().
+2024.10.23  inspectSpin() now works for edc and mdc (FAT and FE).
+            updateMDC() is stil under construction.
+2024.10.18  Updated inspectSpin(). Works for spin_edc and spin_mdc (FE, not FAT yet).
+2024.10.17  Adding updateSpinEDC() and inspectSpin().
+2024.10.02  Fixed bug in rotatePolarization().
+2024.09.17b Added deleteSpinEDCCurve().
+2024.09.17  Added mergeSpinEDS(edc1, edc2).
+2024.05.29  The folder was renamed to dopey so I had to update the import from dopey_constants.py and dopey_methods.py.
+2024.05.26  Fixed a couple of bugs where the old key name Type had not been changed to type.
+            Edited despikeSpin() and getSpinEDCfromMDC() so that they work. 
+            Edited polarization() so that it works.
+            Edited rotatePolarization() so that it should(!) work.
+            normalizeSpin() works for edc but there seem to be a bug for mdc. Have not dug into that.
+2024.05.24  Copied dopey_sin.py from the first dopey and started to edit it. Done so far: quickSpin().
+
+============================================
+dopey_export2txt.py
+============================================
+
+2024.05.28  This module is for exporting data to text files (instead of having to deal with the annoying xy format.)
+            Ready: arpes, spin_edc, and spin_mdc (for FE).
+
+============================================
+dopey_spin.py
+============================================
+
+2024.10.07  Kind of finished fermiFit(). Returns a dict. Have to update dopey_plot.plot().
+2024.10.06  Started to work on a module for curve fitting.
+
+============================================
+dopey_extra_spin_map.py
+============================================
+
+2024.11.25  concatSpin() works.
+2024.10.25  Started to work on methods for spin maps...
+
+============================================
+dopey_dichroism.py
+============================================
+
+2024.11.22b Renamed the module dopey_dichroism.py to not be an extra module but part of the basics.
+2024.11.22  Updates and bugfixes.
+2024.11.21  Methods plotDichroism() and dichroism() ready.
+2024.11.13  Methods for dichroism as an extra module (dopey_extra_dichroism.py)
+
+============================================
+dopey_help.txt
+============================================
+
+2024.10.29  Added align().
+2024.06.03  Short description of the main methods. To use in the __ini__.py file.
+
+
+============================================
+Known or suspected bugs, and stuff to do:
+============================================
+
+    2024.08.30  refs        all files?          many methods            Remove references to DEFLECTORX and DEFLECTORY, 
+                                                                        and use DEFLECTOR_X and DEFLECTOR_Y instead.
+    2024.05.26  bug?        dopery_spin.py      normalizeSpin()         Seems like it does not work for mdc.

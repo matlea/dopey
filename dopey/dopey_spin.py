@@ -1,4 +1,4 @@
-__version__ = "24.11.27"
+__version__ = "24.12.03"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -673,7 +673,7 @@ def updateSpinData(D = {}, polarity = 0, curve = -1, point = -1, value = None, s
         print(Fore.RED + f"updateSpinData(): Argument D must be a spin data dopey dict (valid types: {valid_types})" + Fore.RESET); return D
     #
     if typ == "spin_edc": return updateSpinEDC(D = D, polarity = polarity, curve = curve, point = point, value = value, shup = shup)
-    elif typ == "spin_mdc": return mergeSpinMDC(D = D, polarity = polarity, curve = curve, point = point, value = value, shup = shup)
+    elif typ == "spin_mdc": return updateSpinMDC(D = D, polarity = polarity, curve = curve, point = point, value = value, shup = shup)
 
 
 

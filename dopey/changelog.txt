@@ -1,7 +1,7 @@
 The 2nd version of dopey with a new loader and small modifications of
 the methods. Started 2024.05.14.
 
-Last update: 2024.11.27
+Last update: 2024.12.03
 
 ============================================
 dopey_loader.py
@@ -83,6 +83,7 @@ dopey_constants.py
 dopey_spin.py
 ============================================
 
+2024.12.03  Bugfix.
 2024.11.27  All mergeSpin...() methods are now called insertSpin...(). Works for EDC, MDC, and map (insertSpinEDC(), insertSpinMDC(), and insertSpinMap()). Common method insertSpinMap().
 2024.11.02  Bugfig in mergeSpinMDC().
 2024.11.01b Renamed mergeSpinEDC() and mergeSpinMDC() to insertSpinEDC() and insertSpinMDC().

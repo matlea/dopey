@@ -1,5 +1,5 @@
 
-__version__ = "24.11.30"
+__version__ = "24.12.05"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -114,7 +114,7 @@ def _export2txt_SpinEDC(D = {}, fn = "", shup = False, **kwargs):
     for i, energy in enumerate(D["x"]):
         row = f"{energy:7.3f}"
         if data == "mean":
-            row = f'{row}\t{D["intensity_avg"][0][i]:.5e}\t{D["intensity_avg"][0][i]:.5e}\n'
+            row = f'{row}\t{D["intensity_mean"][0][i]:.5e}\t{D["intensity_mean"][0][i]:.5e}\n'
         elif data == "scans":
             for j in range(n):
                 row = f'{row}\t{D["intensity"][0][j][i]:.5e}'

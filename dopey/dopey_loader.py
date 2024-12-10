@@ -1,4 +1,4 @@
-__version__ = "24.12.10"
+__version__ = "24.12.10b"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -171,7 +171,8 @@ def load(file_name = '', shup = False, keep_raw_data = False):
                     column2.append(float(row_parts[1]))
 
     cycle = np.array(cycle)
-    parameter_values = np.asfarray(parameter_values)
+    #parameter_values = np.asfarray(parameter_values)    # np.asfarray was removed from numpy 2.0. Realized by Sven Schemmelmann. 
+    parameter_values = np.asarray(parameter_values, dtype = np.float64)
     non_energy_ordinate = np.unique(non_energy_ordinate)
     column1, column2 = np.array(column1), np.array(column2)
 

@@ -1,4 +1,4 @@
-__version__ = "24.08.30"
+__version__ = "24.12.10"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -229,6 +229,7 @@ def load(file_name = '', shup = False, keep_raw_data = False):
 
     # for covenience...
     vpc = experiment["Values_Per_Curve"]  
+    print(f"{vpc = }")
 
     if not shup:
         if retd["type"] == "unidentified":
@@ -279,6 +280,24 @@ def load(file_name = '', shup = False, keep_raw_data = False):
                   "intensity": experiment["Count_Rate"],
                   "intensity_mean": experiment["Count_Rate"]}
         retd.update({"labels": labels})
+        #
+        # ------- if scans are saved separately to the .xy file
+        #                 Note that the number of curves per scan is saved as 1 even if it was not like that!!!
+        length = np.shape(rawd["column1"])[-1]
+        if length > vpc:
+            curves_per_scan = int(length/vpc)
+            new_intensity_minus, new_intensity_plus = [], []
+            for curve in intensity_minus:
+                curves = curve.reshape(curves_per_scan, vpc)
+                for c in curves: new_intensity_minus.append(c)
+            for curve in intensity_plus:
+                curves = curve.reshape(curves_per_scan, vpc)
+                for c in curves: new_intensity_plus.append(c)
+            new_intensity_minus, new_intensity_plus = np.array(new_intensity_minus), np.array(new_intensity_plus)
+            retd.update({"intensity": [new_intensity_minus, new_intensity_plus]})
+            retd.update({"intensity_mean": [np.mean(new_intensity_minus, axis = 0), np.mean(new_intensity_plus, axis = 0)]})
+            retd.update({"x": retd["x"][:vpc]})
+
     
     elif retd["type"] == "spin_mdc":        # =========== Spin MDC
         polarity = rawd["parameter_values"][ rawd["parameters"].index("NegativePolarity") ]

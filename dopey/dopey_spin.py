@@ -1,4 +1,4 @@
-__version__ = "24.12.03"
+__version__ = "24.12.05b"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -243,58 +243,7 @@ def despikeSpin(D = {}, N = 3, shup = False, **kwargs):
 
     else:
         print(Fore.MAGENTA + f'despikeSpin(): The method is ready for EDC (FAT), MDC (FAT and FE), and map (FE).' + Fore.RESET)
-        return D
-
-
-
-# ========================================================================================================================
-# ========================================================================================================================
-# ========================================================================================================================
-
-
-def getSpinEDCfromMDC(D = {}, N = 0, shup = False):
-    """
-    Extract one edc from an mdc.
-    D is a dopey dict from load().
-    N is an integer and the N:th edc in the mdc scan.
-    """
-    #
-    if not _thisIsSpinData(D):
-        print(Fore.RED + "getSpinEDCfromMDC(): I do not recognize this as being loaded spin data." + Fore.RESET); return {}
-    #
-    if not D["type"] == "spin_mdc":
-        print(Fore.RED + "getSpinEDCfromMDC(): This is not spin mdc data." + Fore.RESET); return {}
-    #
-    if not shup:
-        print(Fore.BLUE + f"getSpinEDCfromMDC(): Argument N is an integer in the range 0 to {len(D['y'])-1}, where 0 refers to the edc for deflector {D['y'][0]:.0f} and {len(D['y'])-1:.0f} to the edc for deflector {D['y'][-1]}." + Fore.RESET)
-    nok = True
-    try: N = int(abs(N))   
-    except:
-        print(Fore.RED + "getSpinEDCfromMDC(): Argument N must be an integer." + Fore.RESET); return {}
-    if N > len(D["y"]) - 1:
-        print(Fore.RED + "getSpinEDCfromMDC(): Argument N is out of range." + Fore.RESET); return {}
-    #
-    DD = deepcopy(D)
-    intensity = np.array([ D["intensity"][0][:,N,:], D["intensity"][1][:,N,:] ])
-    DD.update({"intensity": intensity})
-    intensity_avg = np.array([ D["intensity_mean"][0][N,:], D["intensity_mean"][1][N,:] ])
-    DD.update({"intensity_mean": intensity_avg})
-    DD.update({"type": "spin_edc"})
-    del DD["y"]
-    labels = DD["labels"]
-    del labels["y"]
-    DD.update({"labels": labels})
-    experiment = DD["experiment"]
-    experiment.update({"parameters": ['NegativePolarity', 'Step']})
-    DD.update({"experiment": experiment})
-    if "raw_data" in DD: del DD["raw_data"]
-    if not shup:
-        print(Fore.BLUE + f"getSpinEDCfromMDC(): Returning a spin EDC for deflector value {D['y'][N]}." + Fore.RESET)
-    return DD
-    
-
-
-
+        return D    
 
 
 
@@ -341,47 +290,49 @@ def normalizeSpin(D = {}, shup = False, **kwargs):
             print(Fore.BLUE + f"normalizeSpin(): Normalized over {nump} points from {D['x'][p]:.3f} to {D['x'][p+nump]:.3f} eV" + Fore.RESET)
     
     #
-    elif D.get("type", "") == "spin_mdc": # and D.get("experiment", {}).get("Scan_Mode", "") == "FixedAnalyzerTransmission":
-        print(Fore.LIGHTBLACK_EX + "normalizeSpin(): Not sure this method works for spin_mdc. There seems to be a bug. Working on it." + Fore.RESET)
+    elif D.get("type", "") == "spin_mdc" and D.get("experiment", {}).get("Scan_Mode", "") == "FixedEnergies":
         accepted_kwargs = ["p", "nump"]
         if not shup:
             print(Fore.BLUE + f"normalizeSpin(): Accepted keyword arguments are: {accepted_kwargs}" + Fore.RESET)
         #
+        # make proper arrays out of the minus and plus data
+        int_m, int_p = [], []
+        for curve in D["intensity"][0]: int_m.append( curve.transpose()[0] )
+        for curve in D["intensity"][1]: int_p.append( curve.transpose()[0] )
+        int_m, int_p = np.array(int_m), np.array(int_p)
+        #
         p = abs(int(kwargs.get("p", 0)))
         nump = abs(int(kwargs.get("nump", 5)))
-        if p > len(D["x"]): p = len(D.get(D["x"]))
+        if p > len(D["y"]): p = len(D.get(D["y"]))
         if nump < 1: nump = 1
-        if p + nump > len(D["x"]) + 1 : nump = len(D["x"]) + 1 - p
+        if p + nump > len(D["y"]) + 1 : nump = len(D["y"]) + 1 - p
         #
-        # individulal curves
-        INTENSITY = np.zeros(np.shape(D["intensity"]))
-        INTENSITY_AVG = np.zeros(np.shape(D["intensity_mean"]))
-        for i, defl in enumerate(D["y"]): 
-            edc_dict = getSpinEDCfromMDC(D = D, N = i, shup = True)
-            normalized_edc_dict = normalizeSpin(D = edc_dict, p = p, nump = nump, shup = True)
-            Intensity = normalized_edc_dict["intensity"]
-            INTENSITY[:,:,i,:] = Intensity      # this one actually works!
-            Intensity_avg = normalized_edc_dict["intensity_mean"]
-            INTENSITY_AVG[:,i,:] = Intensity_avg
-        DD.update({"intensity": INTENSITY})
-        DD.update({"intensity_mean": INTENSITY_AVG})
-    
+        INT_M, INT_P = np.zeros(np.shape(int_m)), np.zeros(np.shape(int_p))
+        for i, curve in enumerate(int_m): INT_M[i] = curve / curve[p:p+nump].sum()
+        for i, curve in enumerate(int_p): INT_P[i] = curve / curve[p:p+nump].sum()
+        #
+        # make "improper" arrays again
+        INT_M2, INT_P2 = [], []
+        for curve in INT_M: INT_M2.append( np.array([curve.transpose()]).transpose())
+        for curve in INT_P: INT_P2.append( np.array([curve.transpose()]).transpose())
+        INT_M2, INT_P2 = np.array(INT_M2), np.array(INT_P2)
+        #
+        DD = deepcopy(D)
+        DD.update({"intensity": np.array([INT_M2, INT_P2])})
+        DD.update({"intensity_mean": np.array([int_m.sum(axis = 0)/len(int_m), int_p.sum(axis = 0)/len(int_p)])})
+        #
+        labels = D["labels"]
+        labels.update({"intensity": "Normalized intensity [a.u]", "intensity_mean": "Normalized intensity [a.u]"})
+        DD.update({"labels": labels})
+        return DD
+
+
     #
     elif D.get("type", "") == "spin_map" and D.get("experiment", {}).get("Scan_Mode", "") == "FixedAnalyzerTransmission":
         print(Fore.MAGENTA + "normalizeSpin(): Normalization of spin maps is not ready. Working on it right now...." + Fore.RESET)
         #
         # Where to normalize...
         return {}
-        
-
-    
-    
-    
-    
-    
-    #
-    elif D.get("Type", "") == "spin_mdc" and D.get("experiment", {}).get("Scan_Mode", "") == "FixedEnergies":
-        print(Fore.MAGENTA + "normalizeSpin(): Not ready for MDC (FAT)." + Fore.RESET); return {}
     #
     elif D.get("Type", "") == "spin_map" and D.get("experiment", {}).get("Scan_Mode", "") == "FixedEnergies":
         print(Fore.MAGENTA + "normalizeSpin(): Not ready for MDC (FE)." + Fore.RESET); return {}
@@ -586,72 +537,6 @@ def insertSpinMap(D1 = {}, D2 = {}, shup = False):
         print(f"   with data from id{D2['spectrum_id']} with {len(D2['intensity'][0])} polarity {D2['polarity'][0]} curves and {len(D2['intensity'][1])} polarity {D2['polarity'][1]} curves." + Fore.RESET)
     return D
 
-
-
-
-
-
-
-
-# ========================================================================================================================
-# ========================================================================================================================
-# ========================================================================================================================
-
-
-def deleteSpinEDCCurve(D = {}, graph = True, polarity = 0, index = -1, figsize = (8, 3.5), shup = False):
-    """
-    Deletes a particular scan from spin_edc data. Pass graph = True (default) to plot all scans,
-    the pass graph = False, polarity = -1 or 1, and index = i where i is found in the graph.
-    Returns a new spin_edc dict.
-    """
-    try: data_type = D.get("type", "invalid")
-    except: data_type = "invalid"
-    if not data_type == "spin_edc":
-        print(Fore.RED + "deleteSpinEDCCurve(): The argument D must be a spin_edc dict." + Fore.RESET); return D
-    #
-    if graph:
-        if not type(figsize) is tuple: figsize = (8, 3.5)
-        fig, ax = plt.subplots(ncols = 2, figsize = (8,3.5))
-        for i, curve in enumerate(D["intensity"][0]): ax[0].plot(D["x"], curve, label = f"{i}")
-        for i, curve in enumerate(D["intensity"][1]): ax[1].plot(D["x"], curve, label = f"{i}")
-        for i in [0, 1]:
-            ax[i].set_xlabel(D["labels"]["x"]); ax[i].set_ylabel(D["labels"]["intensity"])
-            ax[i].legend(fontsize = 10)
-            ax[i].set_title(f"polarity {D['polarity'][i]}")
-        print(Fore.BLUE + "To delete a curve, pass graph = False, polarity = -1 or 1, and index = i where")
-        print("i is the index of the curve (see left and right panel in the graph)." + Fore.RESET)
-        return D
-    #
-    try:
-        polarity, index = int(polarity), int(index)
-    except:
-        print(Fore.RED + "deleteSpinEDCCurve(): The arguments polarity and index must integers." + Fore.RESET); return D
-    if not polarity in [-1, 1]:
-        print(Fore.RED + "deleteSpinEDCCurve(): The argument polarity must be -1 or 1 (integer)." + Fore.RESET); return D
-    intensityn = D["intensity"][0]
-    intensityp = D["intensity"][1]
-    if polarity == -1: pindex = 0
-    else: pindex = 1
-    max_index = len(D["intensity"][pindex]) - 1
-    if not max_index >= 1:
-        print(Fore.RED + f"deleteSpinEDCCurve(): We have to keep at least one curve for polarity {polarity}." + Fore.RESET); return D
-    if not( index >= 0 and index <= max_index ):
-        print(Fore.RED + f"deleteSpinEDCCurve(): The argument index must be between 0 and {max_index} (integer)." + Fore.RESET); return D
-    #
-    if polarity == -1: intensityn = np.delete(intensityn, (index), axis = 0)
-    else: intensityp = np.delete(intensityp, (index), axis = 0)
-    newD = deepcopy(D)
-    newD.update({"intensity": [intensityn, intensityp]})
-    mean_m, mean_p = np.zeros(len(newD["x"])), np.zeros(len(newD["x"]))
-    for curve in newD["intensity"][0]: mean_m += curve
-    for curve in newD["intensity"][1]: mean_p += curve
-    mean_m, mean_p = mean_m / len(newD["intensity"][0]), mean_p / len(newD["intensity"][1])
-    newD.update({"intensity_mean": np.array([mean_m, mean_p])})
-    if not shup:
-        print(Fore.BLUE + "deleteSpinEDCCurve():")
-        print(f'Deleted curve {index} for polarity {polarity}. There are now {len(newD["intensity"][0])} curves')
-        print(f'for polarity {newD["polarity"][0]} and {len(newD["intensity"][1])} curves for polarity {newD["polarity"][1]}.')
-    return newD
 
 
 
@@ -1194,12 +1079,115 @@ def rotatePolarization(D = {}, polar = 0., shup = True):
 
 
 
+# ========================================================================================================================
+# ========================================================================================================================
+# ========================================================================================================================
+
+
+def getSpinEDCfromMDC(D = {}, N = 0, shup = False):
+    """
+    Extract one edc from an mdc.
+    D is a dopey dict from load().
+    N is an integer and the N:th edc in the mdc scan.
+    """
+    #
+    if not _thisIsSpinData(D):
+        print(Fore.RED + "getSpinEDCfromMDC(): I do not recognize this as being loaded spin data." + Fore.RESET); return {}
+    #
+    if not D["type"] == "spin_mdc":
+        print(Fore.RED + "getSpinEDCfromMDC(): This is not spin mdc data." + Fore.RESET); return {}
+    #
+    if not shup:
+        print(Fore.BLUE + f"getSpinEDCfromMDC(): Argument N is an integer in the range 0 to {len(D['y'])-1}, where 0 refers to the edc for deflector {D['y'][0]:.0f} and {len(D['y'])-1:.0f} to the edc for deflector {D['y'][-1]}." + Fore.RESET)
+    nok = True
+    try: N = int(abs(N))   
+    except:
+        print(Fore.RED + "getSpinEDCfromMDC(): Argument N must be an integer." + Fore.RESET); return {}
+    if N > len(D["y"]) - 1:
+        print(Fore.RED + "getSpinEDCfromMDC(): Argument N is out of range." + Fore.RESET); return {}
+    #
+    DD = deepcopy(D)
+    intensity = np.array([ D["intensity"][0][:,N,:], D["intensity"][1][:,N,:] ])
+    DD.update({"intensity": intensity})
+    intensity_avg = np.array([ D["intensity_mean"][0][N,:], D["intensity_mean"][1][N,:] ])
+    DD.update({"intensity_mean": intensity_avg})
+    DD.update({"type": "spin_edc"})
+    del DD["y"]
+    labels = DD["labels"]
+    del labels["y"]
+    DD.update({"labels": labels})
+    experiment = DD["experiment"]
+    experiment.update({"parameters": ['NegativePolarity', 'Step']})
+    DD.update({"experiment": experiment})
+    if "raw_data" in DD: del DD["raw_data"]
+    if not shup:
+        print(Fore.BLUE + f"getSpinEDCfromMDC(): Returning a spin EDC for deflector value {D['y'][N]}." + Fore.RESET)
+    return DD
+
 
     
 
 
 
+# ========================================================================================================================
+# ========================================================================================================================
+# ========================================================================================================================
 
+
+#def deleteSpinEDCCurve(D = {}, graph = True, polarity = 0, index = -1, figsize = (8, 3.5), shup = False):
+#    """
+#    Deletes a particular scan from spin_edc data. Pass graph = True (default) to plot all scans,
+#    the pass graph = False, polarity = -1 or 1, and index = i where i is found in the graph.
+#    Returns a new spin_edc dict.
+#    """
+#    try: data_type = D.get("type", "invalid")
+#    except: data_type = "invalid"
+#    if not data_type == "spin_edc":
+#        print(Fore.RED + "deleteSpinEDCCurve(): The argument D must be a spin_edc dict." + Fore.RESET); return D
+#    #
+#    if graph:
+#        if not type(figsize) is tuple: figsize = (8, 3.5)
+#        fig, ax = plt.subplots(ncols = 2, figsize = (8,3.5))
+#        for i, curve in enumerate(D["intensity"][0]): ax[0].plot(D["x"], curve, label = f"{i}")
+#        for i, curve in enumerate(D["intensity"][1]): ax[1].plot(D["x"], curve, label = f"{i}")
+#        for i in [0, 1]:
+#            ax[i].set_xlabel(D["labels"]["x"]); ax[i].set_ylabel(D["labels"]["intensity"])
+#            ax[i].legend(fontsize = 10)
+#            ax[i].set_title(f"polarity {D['polarity'][i]}")
+#        print(Fore.BLUE + "To delete a curve, pass graph = False, polarity = -1 or 1, and index = i where")
+#        print("i is the index of the curve (see left and right panel in the graph)." + Fore.RESET)
+#        return D
+#    #
+#    try:
+#        polarity, index = int(polarity), int(index)
+#    except:
+#        print(Fore.RED + "deleteSpinEDCCurve(): The arguments polarity and index must integers." + Fore.RESET); return D
+#    if not polarity in [-1, 1]:
+#        print(Fore.RED + "deleteSpinEDCCurve(): The argument polarity must be -1 or 1 (integer)." + Fore.RESET); return D
+#    intensityn = D["intensity"][0]
+#    intensityp = D["intensity"][1]
+#    if polarity == -1: pindex = 0
+#    else: pindex = 1
+#    max_index = len(D["intensity"][pindex]) - 1
+#    if not max_index >= 1:
+#        print(Fore.RED + f"deleteSpinEDCCurve(): We have to keep at least one curve for polarity {polarity}." + Fore.RESET); return D
+#    if not( index >= 0 and index <= max_index ):
+#        print(Fore.RED + f"deleteSpinEDCCurve(): The argument index must be between 0 and {max_index} (integer)." + Fore.RESET); return D
+#    #
+#    if polarity == -1: intensityn = np.delete(intensityn, (index), axis = 0)
+#    else: intensityp = np.delete(intensityp, (index), axis = 0)
+#    newD = deepcopy(D)
+#    newD.update({"intensity": [intensityn, intensityp]})
+#    mean_m, mean_p = np.zeros(len(newD["x"])), np.zeros(len(newD["x"]))
+#    for curve in newD["intensity"][0]: mean_m += curve
+#    for curve in newD["intensity"][1]: mean_p += curve
+#    mean_m, mean_p = mean_m / len(newD["intensity"][0]), mean_p / len(newD["intensity"][1])
+#    newD.update({"intensity_mean": np.array([mean_m, mean_p])})
+#    if not shup:
+#        print(Fore.BLUE + "deleteSpinEDCCurve():")
+#        print(f'Deleted curve {index} for polarity {polarity}. There are now {len(newD["intensity"][0])} curves')
+#        print(f'for polarity {newD["polarity"][0]} and {len(newD["intensity"][1])} curves for polarity {newD["polarity"][1]}.')
+#    return newD
         
         
 

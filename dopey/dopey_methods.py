@@ -1,4 +1,4 @@
-__version__ = "24.10.30"
+__version__ = "24.12.05"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -337,7 +337,37 @@ def shiftAxis(D = {}, axis = "x", shift = 0, shup = False):
     DD = copy.deepcopy(D)
     DD.update({axis: Axis + shift})
     return DD
-        
+
+
+
+# ============================================================================================ 
+# ============================================================================================
+# ============================================================================================
+
+def getIntensity(D = {}, shup = True):
+    """
+    """
+    try: typ = D["type"]
+    except:
+        print(Fore.RED + "getIntensity(): Argument D must be a dopey dict." + Fore.RESET); return {}
+    #
+    intensity = D["intensity"]
+    #
+    if typ in ["XPS", "ARPES"]:
+        return {"total": intensity.sum(),
+                "min": intensity.min(),
+                "max": intensity.max()}
+    
+    elif typ in ["fermi_map"]:
+        return {"total": intensity.sum(),
+                "min": intensity.min(),
+                "max": intensity.max()}
+    
+    elif typ in ["spin_edc"]:
+        DD = {}
+        return {}
+
+
 
 
 

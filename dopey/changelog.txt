@@ -7,6 +7,7 @@ Last update: 2024.12.06
 dopey_loader.py
 ============================================
 
+2024.12.10  load() is updated to that it can save individual curves for spin edc (i.e. scans) when the data is saved as such. 
 2024.08.30  Added spin arpes as a loadable data type.
             Importing DEFLECTOR_X and DEFLECTOR_Y from dopey_constants.py.
             Make sure to, with time, remove references to DEFLECTORX and DEFLECTORY.

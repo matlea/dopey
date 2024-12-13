@@ -7,6 +7,7 @@ Last update: 2024.12.06
 dopey_loader.py
 ============================================
 
+2024.12.13  Bugfix: reading number_of_scans propperly, also adding comment to the experimen dict.
 2024.12.10b Replaced numpy.asfarray(array) in load() with numpy.asarray(array, dtype = np.float64) as asfarray() was removed from numpy 2.0. Found by Sven Schemmelmann.
 2024.12.10  load() is updated to that it can save individual curves for spin edc (i.e. scans) when the data is saved as such. 
 2024.08.30  Added spin arpes as a loadable data type.

@@ -1,4 +1,4 @@
-__version__ = "24.12.10b"
+__version__ = "24.12.13"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -106,8 +106,12 @@ def load(file_name = '', shup = False, keep_raw_data = False):
                 if row.startswith("# Parameter:"):
                     par = row.split(":")[1].split('=')[0].replace('" ', '').replace(' "', '')
                     parameters.append(par)
-                if row.startswith("Number of Scans:"):
+                if row.startswith("# Number of Scans:"):     ### <<<<<<<<<< ------------------ No leading # ???
                     experiment.update({'Number_of_scans': int(row.split(':')[1])})
+                if row.startswith("# Comment"):
+                    comment = row.split(":")[1].lstrip(" ")
+                    experiment.update({"Comment": comment})
+                    print(f"{comment = }")
                 if row == '# Cycle: 0':
                     data_start_row = i
                 if row.startswith('# ColumnLabels'):
@@ -230,7 +234,6 @@ def load(file_name = '', shup = False, keep_raw_data = False):
 
     # for covenience...
     vpc = experiment["Values_Per_Curve"]  
-    print(f"{vpc = }")
 
     if not shup:
         if retd["type"] == "unidentified":

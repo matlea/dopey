@@ -1,4 +1,4 @@
-__version__ = "24.12.13"
+__version__ = "24.12.17"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -111,7 +111,6 @@ def load(file_name = '', shup = False, keep_raw_data = False):
                 if row.startswith("# Comment"):
                     comment = row.split(":")[1].lstrip(" ")
                     experiment.update({"Comment": comment})
-                    print(f"{comment = }")
                 if row == '# Cycle: 0':
                     data_start_row = i
                 if row.startswith('# ColumnLabels'):
@@ -524,6 +523,10 @@ def dataInfo(D = {}, **kwargs):
     print(f"  {fBLA}intensity:      {fBLU}{np.shape(D.get('intensity', []))}{fRES}")
     if "intensity_mean" in D:
         print(f"  {fBLA}intensity_mean: {fBLU}{np.shape(D.get('intensity_mean', []))}{fRES}")
+    #
+    if not EXP.get("Comment", "") == "":
+        print(f"{fBLA}Comment:{fRES}")
+        print(f"{fBLU}{EXP.get('Comment', '')}{fRES}")
     print(f"{fBLA}==========================={fRES}")
 
 

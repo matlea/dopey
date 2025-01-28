@@ -135,6 +135,8 @@ dopey_extra_spin_map.py
 dopey_dichroism.py
 ============================================
 
+2024.01.28  Added radialIntensity(x, y, intensity) as extra method, as well as getXYI() to pull out x, y, intensity
+            from a dopey dict (fermi map or dichroism).
 2024.11.22b Renamed the module dopey_dichroism.py to not be an extra module but part of the basics.
 2024.11.22  Updates and bugfixes.
 2024.11.21  Methods plotDichroism() and dichroism() ready.

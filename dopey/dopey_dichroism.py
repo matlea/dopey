@@ -572,7 +572,7 @@ def radialIntensity(x = np.array([]), y = np.array([]), intensity = np.array([])
         intensity_map[i] = profile
     ax[3].plot(angles, intensity_curve, color = "k")
     #
-    ax[2].imshow(intensity_map, aspect = "auto", extent = [radius[0], radius[-1], angles[-1], angles[0]])
+    ax[2].imshow(intensity_map, aspect = "auto", extent = [radius[0], radius[-1], angles[-1], angles[0]], cmap = "bwr")
     ax[2].invert_yaxis()
     #
     ax[0].set_xlabel("x"); ax[0].set_ylabel("y")

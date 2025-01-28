@@ -1,4 +1,4 @@
-__version__ = "24.11.22b"
+__version__ = "25.01.28"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -416,4 +416,173 @@ def _dichroNorm(D = {}, **kwargs):
     #
     ret_dict.update({"intensity": ret_dict["intensity+"] - ret_dict["intensity-"]})
     return ret_dict
+
+
+
+
+# ===============================================================
+# ===============================================================   Extra methods
+# ===============================================================
+
+def getXYI(D = {}, E0 = None, dE = None, xmin = None, xmax = None, ymin = None, ymax = None):
+    """
+    This method pulls out three arrays from a dopey dict to be used with...
+        ShiftX, AnalyzerY, and Intensity.
+    
+    The dopey dict should either be a fermi map (from dopey.load() or a so called dichroism cut (from dopey.dichroism()).
+
+    Example Fermi map: 
+        x, y, intensity = dopey.getXYI(data, E0 = 16.5, dE = 0.1, xmin = None, xmax = None, ymin = None, ymax = None)
+    
+    Example dichroism cut:
+        x, y, intensity = dopey.getXYI(data, xmin = None, xmax = None, ymin = None, ymax = None)
+    
+    xmin, xmax, ymin, and ymax is cutting the intensity array along the ShiftX and AnalyzerY directions.
+
+    """
+    try: typ = D["type"]
+    except:
+        print("D must be a dict."); return np.array([]), np.array([]), np.array([])
+    DD = deepcopy(D)
+    dim = len(np.shape(DD["intensity"]))
+    if dim == 3:
+        try: E0 = float(E0)
+        except: E0 = DD["x"].mean()
+        try: dE = float(dE)
+        except: dE = abs(DD["x"][10]-DD["x"][0])
+        DD = subArray(DD, axis = "x", v1 = E0-dE/2, v2 = E0+dE/2, shup = True)
+        DD = compact(DD, axis = "x", shup = True)
+    dim = len(np.shape(DD["intensity"]))
+    if dim == 2:
+        try: xmin = float(xmin)
+        except: xmin = DD["y"].min()
+        try: xmax = float(xmax)
+        except: xmax = DD["y"].max()
+        if xmin > DD["y"].min() and xmax < DD["y"].max():
+            DD = subArray(DD, axis = "y", v1 = xmin, v2 = xmax, shup = True)
+        try: ymin = float(ymin)
+        except: ymin = DD["x"].min()
+        try: ymax = float(ymax)
+        except: ymax = DD["x"].max()
+        if ymin > DD["x"].min() and ymax < DD["x"].max():
+            DD = subArray(DD, axis = "x", v1 = ymin, v2 = ymax, shup = True)
+        #
+        return DD["y"], DD["x"], DD["intensity"].T
+    print("Not correct dopey dict.")
+    return np.array([]), np.array([]), np.array([])
+
+
+
+def radialIntensity(x = np.array([]), y = np.array([]), intensity = np.array([]), x0 = None, y0 = None, r = None, N = 0):
+    """
+    Pass arguments x (shiftX), y (analyzerY), and intensity.
+    Pass x0 and y0 as the center of the map.
+    pass r as the radius and N as the number of angles between 0 and 360.
+
+    Returns a dict with...
+    
+    """
+    try: x = np.array(x)
+    except:
+        print("  Argument x must be a 1d array."); return
+    try: y = np.array(y)
+    except:
+        print("  Argument y must be a 1d array."); return
+    try: intensity = np.array(intensity)
+    except:
+        print("  Argument intensity must be a 2d array."); return
+    #
+    #intensity = intensity.T
+    #
+    shpx, shpy, shpint = np.shape(x), np.shape(y), np.shape(intensity)
+    
+    ok = False
+    if len(shpx) == 1 and len(shpy) == 1 and len(shpint) == 2:
+        #print(f"x:         {len(shpx)}d, {len(x)} pnts")
+        #print(f"y:         {len(shpy)}d, {len(y)} pnts")
+        #print(f"intensity: {len(shpint)}d  {shpint[1]}x{shpint[0]} pnts")
+        if shpx[0] == shpint[1] and shpy[0] == shpint[0]: ok = True
+    if not ok:
+        print("  The axes does not fit to the intensity.")#; return
+    #
+    fig = plt.figure(figsize = (10,6))
+    ax = []
+    ax.append( plt.subplot2grid((2, 3), (0, 0), colspan = 1, rowspan = 2, fig = fig))
+    ax.append( plt.subplot2grid((2, 3), (0, 1), colspan = 1, rowspan = 1, fig = fig))
+    ax.append( plt.subplot2grid((2, 3), (1, 1), colspan = 1, rowspan = 1, fig = fig))
+    ax.append( plt.subplot2grid((2, 3), (0, 2), colspan = 1, rowspan = 2, fig = fig))
+    #
+    ax[0].imshow(intensity, extent = [x[0], x[-1], y[-1], y[0]], aspect = "equal", cmap = "bwr")
+    ax[0].invert_yaxis()
+    #
+    try: x0 = float(x0)
+    except: x0 = x.mean()
+    try: y0 = float(y0)
+    except: y0 = y.mean()
+    ax[0].axvline(x = x0, color = "white", linestyle = ":", linewidth = 0.5)
+    ax[0].axhline(y = y0, color = "white", linestyle = ":", linewidth = 0.5)
+    ax[0].scatter(x0, y0, c = "white", marker = "+")
+    #
+    try: r = float(r)
+    except: r = np.min([abs(x[0]-x[-1])/2, abs(y[0]-y[-1])/2])
+    circle = plt.Circle((x0, y0), r, color='white', fill=False, linestyle = "--", linewidth = 0.7)
+    ax[0].add_patch(circle)
+    #
+    try: N = abs(int(N))
+    except: N = 30
+    if N <= 0: N = 30
+    #
+    if shpint[0] > shpint[1]: n = int(shpint[0]*(r/(y[-1]-y[0])))
+    else: n = int(shpint[1]*(r/(x[-1]-x[0])))
+    #
+    angles = np.linspace(0, 360, N+1)
+    radius = np.linspace(0,r,n+1)
+    intensity_curve = np.zeros(N+1)*np.NaN
+    intensity_map = np.zeros([N+1, n+1])
+    for i, a in enumerate(angles):
+        ar = np.deg2rad(a)
+        ax[0].plot([x0, x0 + r*np.cos(ar)], [y0, y0 + r*np.sin(ar)], linewidth = 0.7)
+        #
+        profile = np.zeros(n+1)
+        for ir, R in enumerate(radius):
+            xr, yr = x0 + R*np.cos(ar), y0 + R*np.sin(ar)
+            ix, iy = abs(xr-x).argmin(), abs(yr-y).argmin()
+            profile[ir] += intensity[iy-1][ix-1]
+            profile[ir] += intensity[iy][ix-1]
+            profile[ir] += intensity[iy+1][ix-1]
+            profile[ir] += intensity[iy-1][ix]
+            profile[ir] += intensity[iy][ix]       # <<<------
+            profile[ir] += intensity[iy+1][ix]
+            profile[ir] += intensity[iy-1][ix+1]
+            profile[ir] += intensity[iy][ix+1]
+            profile[ir] += intensity[iy+1][ix+1]
+            profile[ir] /= 9
+        #
+        ax[1].plot(radius, profile, label = f"{a}°", linewidth = 0.5)
+        #
+        mn, mx = profile.min(), profile.max()
+        if mn >= 0 and mx >= 0: value = profile.max()   # whole curve positive
+        elif mn < 0 and mx < 0: value = profile.min()   # whole curve negative
+        else:
+            if abs(mn) <= abs(mx): value = profile.max()
+            else: value = profile.min()
+        #
+        ax[3].scatter(a, value, marker = "x", s = 15)
+        intensity_curve[i] = value
+        intensity_map[i] = profile
+    ax[3].plot(angles, intensity_curve, color = "k")
+    #
+    ax[2].imshow(intensity_map, aspect = "auto", extent = [radius[0], radius[-1], angles[-1], angles[0]])
+    ax[2].invert_yaxis()
+    #
+    ax[0].set_xlabel("x"); ax[0].set_ylabel("y")
+    ax[1].set_xlabel("along radius"); ax[1].set_ylabel("intensty")
+    ax[2].set_xlabel("along radius"); ax[2].set_ylabel("angle")
+    ax[3].set_xlabel("angle"); ax[3].set_ylabel("intensity")
+
+    ax[2].set_yticks([0, 45, 90, 135, 180, 225, 270, 315, 360])
+    ax[3].set_xticks([0, 45, 90, 135, 180, 225, 270, 315, 360])
+    fig.tight_layout()
+
+    return {"angle": angles, "intensity": intensity_curve}
 

@@ -1,7 +1,7 @@
 The 2nd version of dopey with a new loader and small modifications of
 the methods. Started 2024.05.14.
 
-Last update: 2024.12.17
+Last update: 2025.01.03
 
 ============================================
 dopey_loader.py
@@ -143,13 +143,15 @@ dopey_dichroism.py
 2024.11.13  Methods for dichroism as an extra module (dopey_extra_dichroism.py)
 
 ============================================
+dopey_ses.py
+============================================
+
+2025.02.03  ses_zip_load() can import fermi map data from SES. Based on Craig Polley's file loader SES_zip.py. 
+            Returns a dopey dict. Not loaded by dopey by default.
+
+============================================
 dopey_help.txt
 ============================================
 
 2024.10.29  Added align().
 2024.06.03  Short description of the main methods. To use in the __ini__.py file.
-
-
-============================================
-Known or suspected bugs, and stuff to do:
-============================================

@@ -42,6 +42,7 @@ def ses_zip_load(file_name = '', shup = False, **kwargs):
 	experiment.update({"Analysis_Method": "N/A", "Analyzer": "PhoibosCCD", "Lens_Mode": "?", "Scan_Mode": ses["Metadata"]["Acquisition Mode"]})
 	#experiment.update({""})
 	retdict.update({"experiment": experiment})
+	retdict.update({"ses": ses["Metadata"]})
 	#
 	return retdict
 	

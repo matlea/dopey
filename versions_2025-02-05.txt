@@ -1,0 +1,11 @@
+this file is updated 2025.02.05
+files:
+dopey_constants.py, 24.09.18
+dopey_dichroism.py, 25.01.28
+dopey_export2txt.py, 24.12.05
+dopey_methods.py, 24.12.05
+dopey_loader.py, 24.12.17
+dopey_plot.py, 24.11.22
+dopey_spin.py, 24.12.05b
+dopey_extra_spin_map.py, 24.11.26
+dopey_ses.py, 25.02.05

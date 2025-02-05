@@ -1,7 +1,7 @@
 The 2nd version of dopey with a new loader and small modifications of
 the methods. Started 2024.05.14.
 
-Last update: 2025.01.03
+Last update: 2025.01.05
 
 ============================================
 dopey_loader.py
@@ -146,6 +146,7 @@ dopey_dichroism.py
 dopey_ses.py
 ============================================
 
+2025.02.05  Updated ses_zip_load() to pull out more metadata and store it in the dopey dict.
 2025.02.03  ses_zip_load() can import fermi map data from SES. Based on Craig Polley's file loader SES_zip.py. 
             Returns a dopey dict. Not loaded by dopey by default.
 

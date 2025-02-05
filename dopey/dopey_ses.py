@@ -1,4 +1,4 @@
-__version__ = "25.02.03"
+__version__ = "25.02.05"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__} (Zip loader by Craig Polley)")
@@ -18,7 +18,7 @@ import numpy as np
 def ses_zip_load(file_name = '', shup = False, **kwargs):
 	"""
 	This meathod loads zip data from SES. It is heavily dependent on Craig Polley's SES_zip.py.
-	The data is loaded by _zip_load() into a pesto dics and then rearranged into dopey format.
+	The data is loaded by _ses_zip_load() into a pesto dics and then rearranged into dopey format.
 	"""
 	region_index = kwargs.get("regio_index", 0)
 	ses = _ses_zip_load(fileName = file_name, regionIndex = region_index)
@@ -30,7 +30,7 @@ def ses_zip_load(file_name = '', shup = False, **kwargs):
 	#
 	retdict = {"file_name": file_name, "spectrum_id": 99999, "experiment": {}, "type": "fermi_map"}
 	retdict.update({"x": ses["Axis"][0], "y": ses["Axis"][1], "z": ses["Axis"][2]})
-	retdict.update({"intensity": np.array([]), "labels": {"x": ses["AxisLabel"][0], "y": ses["AxisLabel"][1], "z": ses["AxisLabel"][2]}})
+	retdict.update({"intensity": np.array([]), "labels": {"x": ses["AxisLabel"][0], "y": ses["AxisLabel"][1], "z": ses["AxisLabel"][2], "intensity": "?"}})
 	#
 	shp = np.shape(ses["data"])
 	new_data = np.zeros([shp[2], shp[1], shp[0]])
@@ -38,9 +38,10 @@ def ses_zip_load(file_name = '', shup = False, **kwargs):
 		new_data[i3] = ses["data"][:,:,i3].T
 	retdict.update({"intensity": new_data})
 	#
-	experiment = {"Version": ses["Metadata"]["Instrument"], "Energy_Axis": ses["Metadata"]["Energy Unit"], "Count_Rate": "?", "Spectrum_ID": retdict["spectrum_id"]}
-	experiment.update({"Analysis_Method": "N/A", "Analyzer": "PhoibosCCD", "Lens_Mode": "?", "Scan_Mode": ses["Metadata"]["Acquisition Mode"]})
-	#experiment.update({""})
+	experiment = {"Version": "Scienta " + ses["Metadata"]["Instrument"]}
+	experiment.update({"Energy_Axis": ses["Metadata"]["Energy Unit"], "Count_Rate": "?", "Spectrum_ID": retdict["spectrum_id"]})
+	experiment.update({"Analysis_Method": "N/A", "Analyzer": "PhoibosCCD", "Lens_Mode": ses["Metadata"]["Lens Mode"], "Scan_Mode": ses["Metadata"]["Acquisition Mode"]})
+	experiment.update({"Ek": np.NaN, "Ep": ses["Metadata"]["Pass Energy"]})
 	retdict.update({"experiment": experiment})
 	retdict.update({"ses": ses["Metadata"]})
 	#
@@ -58,6 +59,9 @@ def ses_zip_load(file_name = '', shup = False, **kwargs):
 
 
 def _ses_zip_load(fileName,**kwargs):
+	"""
+	FROM CRAIG POLLEY'S SES_zip.py
+	"""
 
 	beQuiet=kwargs.get('beQuiet')
 	regionIndex=kwargs.get('regionIndex')

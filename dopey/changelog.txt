@@ -1,7 +1,7 @@
 The 2nd version of dopey with a new loader and small modifications of
 the methods. Started 2024.05.14.
 
-Last update: 2025.01.05
+Last update: 2025.02.12
 
 ============================================
 dopey_loader.py
@@ -31,6 +31,7 @@ dopey_loader.py
 dopey_plot.py
 ============================================
 
+2025.02.12  Fixed the min and max intensity sliders in fermiMapInteractive().
 2024.11.22  Added waterfallPlot().
 2024.11.21  Added type 'dicroism' for plotting.
 2024.10.05  Disabled type-checking in .plot() since I got it wrong. Return to this later.

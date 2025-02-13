@@ -1,4 +1,4 @@
-__version__ = "24.11.22"
+__version__ = "25.02.12"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -629,7 +629,6 @@ def _plotFermiMap(D = {}, ax = None, shup = False, **kwargs):
     if cut:
         return _plotFermiMapCut(D = D, ax = ax, shup = shup, **kwargs)
     else:
-        print(Fore.MAGENTA + "plot(): The intensity sliders are not active. Working on it." + Fore.RESET)
         _ = fermiMapInteractive(D = D, shup = shup, **kwargs)
 
 
@@ -676,8 +675,10 @@ def fermiMapInteractive(D = {}, shup = False, **kwargs):
     box_sliders_dx = ipw.HBox([SliderDE, SliderDX, SliderDY])
     box_sliders = ipw.VBox([box_sliders_x, box_sliders_dx])
 
-    SliderVmin = ipw.FloatSlider(min=0, max=D["intensity"].max(), step = D["intensity"].max()/20, description = 'Imin', value = 0, readout_format = ".1f")
-    SliderVmax = ipw.FloatSlider(min=0, max=D["intensity"].max(), step = D["intensity"].max()/20, description = 'Imax', value = D["intensity"].max(), readout_format = ".1f")
+    #SliderVmin = ipw.FloatSlider(min=0, max=D["intensity"].max(), step = D["intensity"].max()/20, description = 'Imin', value = 0, readout_format = ".1f")
+    #SliderVmax = ipw.FloatSlider(min=0, max=D["intensity"].max(), step = D["intensity"].max()/20, description = 'Imax', value = D["intensity"].max(), readout_format = ".1f")
+    SliderVmin = ipw.FloatSlider(min=0, max=1, step = 0.01, description = 'Imin', value = 0, readout_format = ".2f")
+    SliderVmax = ipw.FloatSlider(min=0, max=1, step = 0.01, description = 'Imax', value = 1, readout_format = ".2f")
 
     box_sliders_2top = ipw.HBox([SliderVmin])
     box_sliders_2bot = ipw.HBox([SliderVmax])
@@ -695,16 +696,28 @@ def fermiMapInteractive(D = {}, shup = False, **kwargs):
         YE = compact(D = subArray(D = D, axis = "z", v1 = X-DX/2, v2 = X+DX/2, shup = True), axis = 'z', shup = True)
         XE = compact(D = subArray(D = D, axis = "y", v1 = Y-DY/2, v2 = Y+DY/2, shup = True), axis = 'y', shup = True)
         #
-        #slider_vmin = np.min([XY["intensity"].min(), YE["intensity"].min(), XE["intensity"].min()])
-        #slider_vmax = np.min([XY["intensity"].max(), YE["intensity"].max(), XE["intensity"].max()])
-        #SliderVmin.min, SliderVmin.max = slider_vmin, slider_vmax
-        #SliderVmax.min, SliderVmax.max = slider_vmin, slider_vmax
+        if VMIN >= VMAX:
+            VMIN = VMAX
+            SliderVmin.value = VMIN
+            SliderVmax.value = VMAX
+        #
+        XYmin, XYmax = XY["intensity"].min(), XY["intensity"].max()
+        XYdiff = XYmax - XYmin
+        vmin_xy, vmax_xy = XYmin + VMIN*XYdiff, XYmin + VMAX*XYdiff
+
+        YEmin, YEmax = YE["intensity"].min(), YE["intensity"].max()
+        YEdiff = YEmax - YEmin
+        vmin_ye, vmax_ye = YEmin + VMIN*YEdiff, YEmin + VMAX*YEdiff
+
+        XEmin, XEmax = XE["intensity"].min(), XE["intensity"].max()
+        XEdiff = XEmax - XEmin
+        vmin_xe, vmax_xe = XEmin + VMIN*XEdiff, XEmin + VMAX*XEdiff
         #
         #if VMIN > VMAX: VMIN = VMAX
         VMIN, VMAX = None, None
-        _ = ax[0].imshow(XY['intensity'].transpose(), extent = extentE, aspect = 'equal', cmap = cmap, vmin = VMIN, vmax = VMAX)
-        _ = ax[1].imshow(YE['intensity'].transpose(), extent = extentX, aspect = 'auto',  cmap = cmap, vmin = VMIN, vmax = VMAX)
-        _ = ax[2].imshow(XE['intensity'].transpose(), extent = extentY, aspect = 'auto',  cmap = cmap, vmin = VMIN, vmax = VMAX)
+        _ = ax[0].imshow(XY['intensity'].transpose(), extent = extentE, aspect = 'equal', cmap = cmap, vmin = vmin_xy, vmax = vmax_xy)
+        _ = ax[1].imshow(YE['intensity'].transpose(), extent = extentX, aspect = 'auto',  cmap = cmap, vmin = vmin_ye, vmax = vmax_ye)
+        _ = ax[2].imshow(XE['intensity'].transpose(), extent = extentY, aspect = 'auto',  cmap = cmap, vmin = vmin_xe, vmax = vmax_xe)
         for a in ax: a.invert_yaxis()
         #
         ax[0].axvline(x = X - DX/2, linewidth = linewidth, color = 'red')

@@ -1,4 +1,4 @@
-__version__ = "24.12.05b"
+__version__ = "25.02.14"
 __author__  = "Mats Leandersson"
 
 print(f"{__name__}, {__version__}")
@@ -824,10 +824,217 @@ def inspectSpin(D = {}, shup = False, **kwargs):
 # ========================================================================================================================
 # ========================================================================================================================
 
-
-
 def polarization(D = [], sherman = None, shup = True):
     """
+    Pass D as a list of quickSpin-results. Options:
+    1. Four dicts with different coil and rotator values for correct polarization.
+    2. Three dicts (coil 1 with any rotator, and coil2 rotator+ and coil 2 rotator-) for a semi-correct polarization.
+    3. Two dicts (coil 2 with rotator + and -) for a correct xy polarization.
+    4. One dict (coil 1 with either rotator value) for a semi-correct z polarization.
+    Note that you need to specify coil and rotator when using quickSpin().
+    """
+    # Target tilt angle
+    ta = np.deg2rad(15)
+    #
+    R = {}
+    R.update({"type": None})      # always 'result'
+    R.update({"kind": None})
+    R.update({"polarizations": None})
+    R.update({"x": None, "y": None})
+    R.update({"asymmetry_c1rp": None, "asymmetry_c1rm": None, "asymmetry_c2rp": None, "asymmetry_c2rm": None})
+    R.update({"px": None, "py": None, "pz": None})
+    R.update({"component_intensity_px": None})
+    R.update({"component_intensity_py": None})
+    R.update({"component_intensity_pz": None})
+    R.update({"labels": None})
+    #
+    try: sherman = float(sherman)
+    except: sherman = SHERMAN
+    #
+    if not shup:
+        print(Fore.BLUE + "polarization(): Pass D as a list of suitable result dicts from quickSpin() to calculate polarizations." + Fore.RESET)
+        print(Fore.BLUE + "                sherman = {sherman}. Pass argument sherman to use another value." + Fore.RESET)
+    #
+    if not type(D) is list:
+        print(Fore.RED + "polarization(): Argument D must be a list of dicts." + Fore.RESET); return R
+    if len(D) == 0:
+        print(Fore.RED + "polarization(): Argument D must be a list of dicts." + Fore.RESET); return R
+    for item in D:
+        if not type(item) is dict:
+            print(Fore.RED + "polarization(): Found an item in the list that is not a dict." + Fore.RESET); return R
+        if not item.get("type", "NONE") == "result":
+            print(Fore.RED + "polarization(): Found an item in the list that is not a result dict." + Fore.RESET); return R
+        if not item.get("kind", "NONE").startswith("spin"):
+            print(Fore.RED + "polarization(): Found an item in the list that is not a spin result dict." + Fore.RESET); return R
+    #
+    if len(D) == 1:
+        if D[0]["coil"] == 1:
+            D1, D2, D3, D4, Cse = deepcopy(D[0]), None, None, None, "pseudo_z"
+            print(Fore.MAGENTA + "polarization(): Aiming to calculate Pz but as only one asymmetry is provided it might not be correct." + Fore.RESET)
+        else:
+            print(Fore.RED + "polarization(): Can not calculate a polarization from only one coil 2 asymmetry." + Fore.RESET); return R
+    #
+    elif len(D) == 2:
+        if not D[0]["coil"] == D[1]["coil"]:
+            print(Fore.RED + "polarization(): I can not do anything with one set of data from each coil. Sorry." + Fore.RESET); return R
+        elif D[0]["coil"] == 1:
+            print(Fore.MAGENTA + "polarization(): Only one data set is needed when only providing coil 1 data. Using the first data set." + Fore.RESET)
+            D1, D2, D3, D4, Cse = deepcopy(D[0]), None, None, None, "pseudo_z"
+        elif D[0]["coil"] == 2:
+            if D[0]["rotator"] == D[1]["rotator"]:
+                print(Fore.RED + "polarization(): The two data sets are for the same rotator. Need one from each." + Fore.RESET); return R
+            else:
+                if D[0]["rotator"] == 1: D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[1]), None, None, "pxy"
+                else: D1, D2, D3, D4, Cse = deepcopy(D[1]), deepcopy(D[0]), None, None, "pxy"
+    #
+    elif len(D) == 3:
+        if not D[0]["coil"] + D[1]["coil"] + D[2]["coil"] == 5:
+            print(Fore.RED + "polarization(): With three data sets I need two of them to be from coil 2 and one from coil 1." + Fore.RESET); return R
+        if D[0]["coil"] == 2 and D[1]["coil"] == 2:
+            if D[0]["rotator"] == D[1]["rotator"]:
+                print(Fore.RED + "polarization(): I need one data set from each rotator for coil 2." + Fore.RESET); return R
+            if D[0]["rotator"] == 1: D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[1]), deepcopy(D[2]), None, "pseudo_pxyz"
+            else: D1, D2, D3, D4, Cse = deepcopy(D[1]), deepcopy(D[0]), deepcopy(D[2]), None, "pseudo_pxyz"
+        elif D[0]["coil"] == 2 and D[2]["coil"] == 2:
+            if D[0]["rotator"] == D[2]["rotator"]:
+                print(Fore.RED + "polarization(): I need one data set from each rotator for coil 2." + Fore.RESET); return R
+            if D[0]["rotator"] == 1: D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[2]), deepcopy(D[1]), None, "pseudo_pxyz"
+            else: D1, D2, D3, D4, Cse = deepcopy(D[2]), deepcopy(D[0]), deepcopy(D[1]), None, "pseudo_pxyz"
+        elif D[1]["coil"] == 2 and D[2]["coil"] == 2:
+            if D[1]["rotator"] == D[2]["rotator"]:
+                print(Fore.RED + "polarization(): I need one data set from each rotator for coil 2." + Fore.RESET); return R
+            if D[1]["rotator"] == 1: D1, D2, D3, D4, Cse = deepcopy(D[1]), deepcopy(D[2]), deepcopy(D[0]), None, "pseudo_pxyz"
+            else: D1, D2, D3, D4, Cse = deepcopy(D[2]), deepcopy(D[1]), deepcopy(D[0]), None, "pseudo_pxyz"
+    #
+    elif len(D) == 4:
+        if not D[0]["coil"] + D[1]["coil"] + D[2]["coil"] + D[3]["coil"] == 6:
+            print(Fore.RED + "polarization(): With four data sets I need two from each coil." + Fore.RESET); return R
+        if D[0]["coil"] + D[1]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[1]), deepcopy(D[2]), deepcopy(D[3]), "pxyz"   # needs more sorting below
+        if D[0]["coil"] + D[2]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[2]), deepcopy(D[1]), deepcopy(D[3]), "pxyz"   # needs more sorting below
+        if D[0]["coil"] + D[3]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[0]), deepcopy(D[3]), deepcopy(D[1]), deepcopy(D[2]), "pxyz"   # needs more sorting below
+        if D[1]["coil"] + D[2]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[1]), deepcopy(D[2]), deepcopy(D[0]), deepcopy(D[3]), "pxyz"   # needs more sorting below
+        if D[1]["coil"] + D[3]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[1]), deepcopy(D[3]), deepcopy(D[0]), deepcopy(D[2]), "pxyz"   # needs more sorting below
+        if D[2]["coil"] + D[3]["coil"] == 4:
+            D1, D2, D3, D4, Cse = deepcopy(D[2]), deepcopy(D[3]), deepcopy(D[0]), deepcopy(D[1]), "pxyz"   # needs more sorting below
+        #
+        if D1["rotator"] == D2["rotator"] or D3["rotator"] == D4["rotator"]:
+            print(Fore.RED + "polarization(): The two data sets for each coil must have different rotator settings." + Fore.RESET); return R
+        if D1["rotator"] == -1: D1, D2 = D2, D1
+        if D3["rotator"] == -1: D3, D4 = D4, D3
+    #
+    #
+    asym_c1rp = np.zeros(len(D1["intensity"][1]))*np.NaN
+    asym_c1rm, asym_c2rp, asym_c2rm = np.copy(asym_c1rp), np.copy(asym_c1rp), np.copy(asym_c1rp)
+    px, py, pz = np.copy(asym_c1rp), np.copy(asym_c1rp), np.copy(asym_c1rp)
+    cxp, cxm, cyp, cym = np.copy(asym_c1rp), np.copy(asym_c1rp), np.copy(asym_c1rp), np.copy(asym_c1rp)
+    czp, czm = np.copy(asym_c1rp), np.copy(asym_c1rp)
+    #
+    if Cse == "pxy":
+        asym_c2rp = (D1["intensity"][1] - D1["intensity"][0]) / (D1["intensity"][1] + D1["intensity"][0])
+        asym_c2rm = (D2["intensity"][1] - D2["intensity"][0]) / (D2["intensity"][1] + D2["intensity"][0])
+        px =  1/np.sqrt(2)/sherman * (asym_c2rp - asym_c2rm)
+        py = -1/np.sqrt(2)/sherman * (asym_c2rp + asym_c2rm)
+        tot_int = (D1["intensity"][1] + D1["intensity"][0] + D2["intensity"][1] + D2["intensity"][0])/4
+        cxp = tot_int * (1 + px)
+        cxm = tot_int * (1 - px)
+        cyp = tot_int * (1 + py)
+        cym = tot_int * (1 - py)
+        case = "xy"
+    #
+    elif Cse == "pxyz":
+        asym_c2rp = (D1["intensity"][1] - D1["intensity"][0]) / (D1["intensity"][1] + D1["intensity"][0])
+        asym_c2rm = (D2["intensity"][1] - D2["intensity"][0]) / (D2["intensity"][1] + D2["intensity"][0])
+        asym_c1rp = (D3["intensity"][1] - D3["intensity"][0]) / (D3["intensity"][1] + D3["intensity"][0])
+        asym_c1rm = (D4["intensity"][1] - D4["intensity"][0]) / (D4["intensity"][1] + D4["intensity"][0])
+        px =  1/np.sqrt(2)/sherman * (asym_c2rp - asym_c2rm)
+        py = -1/np.sqrt(2)/sherman * (asym_c2rp + asym_c2rm)
+        pz = 1/np.cos(ta) * ((asym_c1rp + asym_c1rm)/2 * 1/sherman - np.sin(ta)/np.sqrt(2)*px)
+        tot_int = (D1["intensity"][1] + D1["intensity"][0] + D2["intensity"][1] + D2["intensity"][0] + D3["intensity"][1] + D3["intensity"][0] + D4["intensity"][1] + D4["intensity"][0])/8
+        cxp = tot_int * (1 + px)
+        cxm = tot_int * (1 - px)
+        cyp = tot_int * (1 + py)
+        cym = tot_int * (1 - py)
+        czp = tot_int * (1 + pz)
+        czm = tot_int * (1 - pz)
+        case = "xyz"
+    #
+    elif Cse == "pseudo_pxyz":
+        asym_c2rp = (D1["intensity"][1] - D1["intensity"][0]) / (D1["intensity"][1] + D1["intensity"][0])
+        asym_c2rm = (D2["intensity"][1] - D2["intensity"][0]) / (D2["intensity"][1] + D2["intensity"][0])
+        asym_c1   = (D3["intensity"][1] - D3["intensity"][0]) / (D3["intensity"][1] + D3["intensity"][0])
+        px =  1/np.sqrt(2)/sherman * (asym_c2rp - asym_c2rm)
+        py = -1/np.sqrt(2)/sherman * (asym_c2rp + asym_c2rm)
+        pz = asym_c1 / sherman
+        cxp = tot_int * (1 + px)
+        cxm = tot_int * (1 - px)
+        cyp = tot_int * (1 + py)
+        cym = tot_int * (1 - py)
+        tot_int = (D1["intensity"][1] + D1["intensity"][0] + D2["intensity"][1] + D2["intensity"][0] + D3["intensity"][1] + D3["intensity"][0])/6
+        czp = tot_int * (1 + pz)
+        czm = tot_int * (1 - pz)
+        if D3["rotator"] == -1: asym_c1rm = np.copy(asym_c1)
+        else: asym_c1rp = np.copy(asym_c1)
+        case = "xyz"
+    #
+    elif Cse == "pseudo_pz":
+        asym_c1 = (D1["intensity"][1] - D1["intensity"][0]) / (D1["intensity"][1] + D1["intensity"][0])
+        pz = asym_c1 / sherman
+        tot_int = (D1["intensity"][1] + D1["intensity"][0])/2
+        czp = tot_int * (1 + pz)
+        czm = tot_int * (1 - pz)
+        if D1["rotator"] == -1: asym_c1rm = np.copy(asym_c1)
+        else: asym_c1rp = np.copy(asym_c1)
+        case = "z"
+    #
+    #
+    R.update({"type": D1["type"]})      # always 'result'
+    R.update({"kind": f'{D1["kind"]}_polarization'})
+    R.update({"polarizations": case})
+    R.update({"asymmetry_c1rp": asym_c1rp})
+    R.update({"asymmetry_c1rm": asym_c1rm})
+    R.update({"asymmetry_c2rp": asym_c2rp})
+    R.update({"asymmetry_c2rm": asym_c2rm})
+    R.update({"px": px})
+    R.update({"py": py})
+    R.update({"pz": pz})
+    R.update({"component_intensity_px": np.array([cxp, cxm])})
+    R.update({"component_intensity_py": np.array([cyp, cym])})
+    R.update({"component_intensity_pz": np.array([czp, czm])})
+    #
+    labels = {}
+    if "x" in D1.keys():
+        R.update({"x": D1["x"]})
+        labels.update({"x": D1["labels"]["x"]})
+    if "y" in D1.keys():
+        R.update({"y": D1["y"]})
+        labels.update({"y": D1["labels"]["y"]})
+    else: del R["y"]
+    labels.update({"polarizations": "Polarization"})
+    labels.update({"asymmetry_c1rp": "Asymmetry"})
+    labels.update({"asymmetry_c1rm": "Asymmetry"})
+    labels.update({"asymmetry_c2rp": "Asymmetry"})
+    labels.update({"asymmetry_c2rm": "Asymmetry"})
+    labels.update({"px": "Polarization"})
+    labels.update({"py": "Polarization"})
+    labels.update({"pz": "Polarization"})
+    labels.update({"component_intensity_px": D1.labels["intensity"]})
+    labels.update({"component_intensity_py": D1.labels["intensity"]})
+    labels.update({"component_intensity_pz": D1.labels["intensity"]})
+    R.update({"labels": labels})
+    #
+    return R
+
+
+def _polarization(D = [], sherman = None, shup = True):
+    """
+    This is the old version of polarization()
+    ----
+
     Pass D as a list of 1, 2, or 3 dicts from quickSpin(). The dict/dicts should fulfill being:
         (a) one coil 1 dict
         (b) two coil 2 dicts, one for each rotator setting (-1 and +1)
@@ -1126,75 +1333,6 @@ def getSpinEDCfromMDC(D = {}, N = 0, shup = False):
 
 
     
-
-
-
-# ========================================================================================================================
-# ========================================================================================================================
-# ========================================================================================================================
-
-
-#def deleteSpinEDCCurve(D = {}, graph = True, polarity = 0, index = -1, figsize = (8, 3.5), shup = False):
-#    """
-#    Deletes a particular scan from spin_edc data. Pass graph = True (default) to plot all scans,
-#    the pass graph = False, polarity = -1 or 1, and index = i where i is found in the graph.
-#    Returns a new spin_edc dict.
-#    """
-#    try: data_type = D.get("type", "invalid")
-#    except: data_type = "invalid"
-#    if not data_type == "spin_edc":
-#        print(Fore.RED + "deleteSpinEDCCurve(): The argument D must be a spin_edc dict." + Fore.RESET); return D
-#    #
-#    if graph:
-#        if not type(figsize) is tuple: figsize = (8, 3.5)
-#        fig, ax = plt.subplots(ncols = 2, figsize = (8,3.5))
-#        for i, curve in enumerate(D["intensity"][0]): ax[0].plot(D["x"], curve, label = f"{i}")
-#        for i, curve in enumerate(D["intensity"][1]): ax[1].plot(D["x"], curve, label = f"{i}")
-#        for i in [0, 1]:
-#            ax[i].set_xlabel(D["labels"]["x"]); ax[i].set_ylabel(D["labels"]["intensity"])
-#            ax[i].legend(fontsize = 10)
-#            ax[i].set_title(f"polarity {D['polarity'][i]}")
-#        print(Fore.BLUE + "To delete a curve, pass graph = False, polarity = -1 or 1, and index = i where")
-#        print("i is the index of the curve (see left and right panel in the graph)." + Fore.RESET)
-#        return D
-#    #
-#    try:
-#        polarity, index = int(polarity), int(index)
-#    except:
-#        print(Fore.RED + "deleteSpinEDCCurve(): The arguments polarity and index must integers." + Fore.RESET); return D
-#    if not polarity in [-1, 1]:
-#        print(Fore.RED + "deleteSpinEDCCurve(): The argument polarity must be -1 or 1 (integer)." + Fore.RESET); return D
-#    intensityn = D["intensity"][0]
-#    intensityp = D["intensity"][1]
-#    if polarity == -1: pindex = 0
-#    else: pindex = 1
-#    max_index = len(D["intensity"][pindex]) - 1
-#    if not max_index >= 1:
-#        print(Fore.RED + f"deleteSpinEDCCurve(): We have to keep at least one curve for polarity {polarity}." + Fore.RESET); return D
-#    if not( index >= 0 and index <= max_index ):
-#        print(Fore.RED + f"deleteSpinEDCCurve(): The argument index must be between 0 and {max_index} (integer)." + Fore.RESET); return D
-#    #
-#    if polarity == -1: intensityn = np.delete(intensityn, (index), axis = 0)
-#    else: intensityp = np.delete(intensityp, (index), axis = 0)
-#    newD = deepcopy(D)
-#    newD.update({"intensity": [intensityn, intensityp]})
-#    mean_m, mean_p = np.zeros(len(newD["x"])), np.zeros(len(newD["x"]))
-#    for curve in newD["intensity"][0]: mean_m += curve
-#    for curve in newD["intensity"][1]: mean_p += curve
-#    mean_m, mean_p = mean_m / len(newD["intensity"][0]), mean_p / len(newD["intensity"][1])
-#    newD.update({"intensity_mean": np.array([mean_m, mean_p])})
-#    if not shup:
-#        print(Fore.BLUE + "deleteSpinEDCCurve():")
-#        print(f'Deleted curve {index} for polarity {polarity}. There are now {len(newD["intensity"][0])} curves')
-#        print(f'for polarity {newD["polarity"][0]} and {len(newD["intensity"][1])} curves for polarity {newD["polarity"][1]}.')
-#    return newD
-        
-        
-
-
-
-
-
 
 
 
